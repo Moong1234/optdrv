@@ -3,12 +3,13 @@
 #include <fstream>
 #include <vector>
 
+// Returns European payoff at the maturity date
 double payoff(double price, double strike, bool put = true)
 {
     return std::max(put * (strike - price), abs(put - 1) * (price - strike));
 }
 
-// Pricing and hedging an European option.
+// Pricing and hedging an American option.
 //
 // INPUT: input.txt
 // Arguments should be given as a single line in input.txt
@@ -52,6 +53,8 @@ int main(int argc, char *argv[])
     std::vector<double> curr_value(N, 0);
     std::vector<double> next_value(N + 1, 0);
 
+    double discount, hold, exec, curr_price;
+
     for (int i = 0; i < N + 1; i++)
         next_value[i] = payoff(pow(u, i) * pow(d, (N - i)) * S, K);
 
@@ -59,9 +62,13 @@ int main(int argc, char *argv[])
     {
         for (int i = 0; i < n; i++)
         {
-            curr_value[i] = exp(-R * delta_t) *
-                            (p * next_value[i + 1] + q * next_value[i]);
+            discount = exp(-R * delta_t);
+            curr_price = pow(u, i) * pow(d, ((n - 1) - i)) * S;
+            exec = payoff(curr_price, K);
+            hold = discount * (p * next_value[i + 1] + q * next_value[i]);
+            curr_value[i] = std::max(exec, hold);
         }
+
         if (n > 1)
         {
             next_value = curr_value;
